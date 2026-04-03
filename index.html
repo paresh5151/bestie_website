@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chat 💬</title>
+
+<style>
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #0b141a;
+  display: flex;
+  justify-content: center;
+}
+
+.chat-container {
+  width: 100%;
+  max-width: 400px;
+  height: 100vh;
+  background: #efeae2;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  background: #075e54;
+  color: white;
+  padding: 12px;
+}
+
+.name { font-size: 16px; }
+.status { font-size: 12px; opacity: 0.8; }
+
+.chat {
+  flex: 1;
+  padding: 15px;
+  overflow-y: auto;
+}
+
+.msg {
+  max-width: 75%;
+  padding: 8px;
+  margin: 8px 0;
+  border-radius: 10px;
+  font-size: 13px;
+  position: relative;
+}
+
+.left { background: white; }
+.right { background: #dcf8c6; margin-left: auto; }
+
+.meta {
+  font-size: 10px;
+  color: gray;
+  margin-top: 3px;
+  text-align: right;
+}
+
+.voice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.play {
+  width: 28px;
+  height: 28px;
+  background: #25d366;
+  border-radius: 50%;
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+}
+
+.progress {
+  width: 100px;
+  height: 4px;
+  background: #ccc;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.bar {
+  height: 100%;
+  width: 0%;
+  background: #25d366;
+}
+
+.options {
+  display: none;
+  padding: 10px;
+  background: white;
+  text-align: center;
+}
+
+button {
+  padding: 12px 20px;
+  margin: 5px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+#yesBtn { background: #25d366; color: white; }
+#noBtn { background: #ff4d4d; color: white; position: relative; }
+</style>
+</head>
+
+<body>
+
+<div class="chat-container">
+  <div class="header">
+    <div class="name" id="name">Someone</div>
+    <div class="status" id="status">online</div>
+  </div>
+
+  <div class="chat" id="chatBox"></div>
+
+  <div class="options" id="options">
+    <button id="yesBtn">YES 💚</button>
+    <button id="noBtn">NO ❌</button>
+  </div>
+</div>
+
+<script>
+const chatBox = document.getElementById("chatBox");
+const status = document.getElementById("status");
+const options = document.getElementById("options");
+const yesBtn = document.getElementById("yesBtn");
+const noBtn = document.getElementById("noBtn");
+const nameEl = document.getElementById("name");
+
+const params = new URLSearchParams(window.location.search);
+const name = params.get("name") || "Akash";
+nameEl.innerText = name;
+
+// ⏱️ time
+function getTime() {
+  const d = new Date();
+  return d.getHours() + ":" + String(d.getMinutes()).padStart(2,'0');
+}
+
+// message creator
+function addMessage(text, side="left", ticks="") {
+  const msg = document.createElement("div");
+  msg.className = "msg " + side;
+
+  msg.innerHTML = `
+    ${text}
+    <div class="meta">${getTime()} ${ticks}</div>
+  `;
+
+  chatBox.appendChild(msg);
+  chatBox.scrollTop = chatBox.scrollHeight;
+
+  return msg;
+}
+
+// tick update simulation
+function updateTicks(msg) {
+  setTimeout(() => msg.querySelector(".meta").innerHTML += " ✓", 500);
+  setTimeout(() => msg.querySelector(".meta").innerHTML += "✓", 1200);
+  setTimeout(() => {
+    msg.querySelector(".meta").innerHTML =
+      msg.querySelector(".meta").innerHTML.replace("✓✓", "🔵🔵");
+  }, 2000);
+}
+
+// typing
+function delay(ms){ return new Promise(res => setTimeout(res, ms)); }
+
+async function typing(t=1500){
+  status.innerText = "typing...";
+  await delay(t);
+  status.innerText = "online";
+}
+
+// 🎧 Voice Note (REAL AUDIO)
+function addVoiceNote() {
+  const msg = document.createElement("div");
+  msg.className = "msg left voice";
+
+  msg.innerHTML = `
+    <div class="play">▶</div>
+    <div class="progress"><div class="bar"></div></div>
+    <div class="meta">${getTime()}</div>
+  `;
+
+  chatBox.appendChild(msg);
+
+  const audio = new Audio("https://www.soundjay.com/buttons/sounds/button-3.mp3");
+  const playBtn = msg.querySelector(".play");
+  const bar = msg.querySelector(".bar");
+
+  playBtn.onclick = () => {
+    audio.play();
+    playBtn.innerText = "⏸";
+
+    audio.ontimeupdate = () => {
+      const percent = (audio.currentTime / audio.duration) * 100;
+      bar.style.width = percent + "%";
+    };
+
+    audio.onended = () => {
+      playBtn.innerText = "▶";
+      bar.style.width = "0%";
+    };
+  };
+}
+
+// FLOW
+async function startChat() {
+  await typing(); addMessage("Hey 👀");
+  await typing(2000); addMessage("I wanted to tell you something...");
+  
+  await typing(2000); addVoiceNote();
+
+  await typing(1500); addMessage("Did you hear that? 😅");
+
+  await typing(1500); addMessage("Okay be honest...");
+
+  await typing(1500);
+  const msg = addMessage("Will you choose me? ❤️");
+  updateTicks(msg);
+
+  options.style.display = "block";
+}
+
+startChat();
+
+// YES
+yesBtn.onclick = () => {
+  const msg = addMessage("YES 💚", "right");
+  updateTicks(msg);
+  addMessage("I knew it 😍❤️");
+};
+
+// NO 😈
+noBtn.onmouseover = moveNo;
+noBtn.onclick = moveNo;
+
+function moveNo() {
+  const x = Math.random() * 200;
+  const y = Math.random() * 500;
+
+  noBtn.style.position = "absolute";
+  noBtn.style.left = x + "px";
+  noBtn.style.top = y + "px";
+}
+</script>
+
+</body>
+</html>
